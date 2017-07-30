@@ -1,3 +1,12 @@
+# Configuration code
+import os
+import sys
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine
+
+Base = declarative_base()
 
 
 class User(Base):
@@ -20,3 +29,8 @@ class featureItem(Base):
     feature = relationship(Feature)
     user = relationship(User)
     # Mapper variables for feature item attributes
+
+
+# End configuration code
+engine = create_engine('sqlite:///featureitem.db')
+Base.metadata.create_all(engine)
