@@ -54,7 +54,9 @@ class Feature(Base):
     description = Column(String(250))
     client = Column(String(80), nullable = False)
     client_priority = Column(Integer)
+    # Examine for possible input changes at later date
     target_date = Column(String(6), nullable = False)
+    # Examine for possible input changes at later date
     product_area = Column(String(80), nullable = False)
 
     @property
