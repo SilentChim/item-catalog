@@ -31,6 +31,14 @@ class Application(Base):
     user = relationship(User)
     name = Column(String(250), nullable = False)
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'name': self.name,
+            'id': self.id
+        }
+
 class Feature(Base):
     """Class defines the table for the items in the database"""
     # Defines the name of the table
@@ -47,6 +55,19 @@ class Feature(Base):
     target_date = Column(String(6), nullable = False)
     product_area = Column(String(80), nullable = False)
     application_id = Column(Integer,ForeignKey('application.id'))
+
+    @property
+    def serialize(self):
+       """Return object data in easily serializeable format"""
+       return {
+            'title': self.title,
+            'description': self.description,
+            'id': self.id,
+            'client': self.client,
+            'client_priority': self.client_priority,
+            'target_date': self.target_date,
+            'product_area': self.product_area
+        }
 
 
 # End configuration code
