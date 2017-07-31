@@ -48,13 +48,14 @@ class Feature(Base):
     user = relationship(User)
     # Mapper variables for feature item attributes
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    application_id = Column(Integer,ForeignKey('application.id'))
     title = Column(String(80), nullable = False)
     description = Column(String(250))
     client = Column(String(80), nullable = False)
     client_priority = Column(Integer)
     target_date = Column(String(6), nullable = False)
     product_area = Column(String(80), nullable = False)
-    application_id = Column(Integer,ForeignKey('application.id'))
 
     @property
     def serialize(self):
