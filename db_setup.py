@@ -20,7 +20,7 @@ class User(Base):
     id = Column(Integer, primary_key = True)
 
 class Application(Base):
-    """Class defines the table for the features in the database"""
+    """Class defines the table for the applications in the database"""
     # Defines the name of the table
     __tablename__ = 'application'
     # Defines relationships with other tables
@@ -40,7 +40,7 @@ class Application(Base):
         }
 
 class Feature(Base):
-    """Class defines the table for the items in the database"""
+    """Class defines the table for the features in the database"""
     # Defines the name of the table
     __tablename__ = 'feature'
     # Defines relationships with other tables
