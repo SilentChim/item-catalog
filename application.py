@@ -11,26 +11,43 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-# Shows all applications in the database
+# Main Handlers
+# Shows all applications
 @app.route('/')
 @app.route('/application')
 def showApplications():
     return "This page will display all created applications"
 
-# Creates a new application by the user
-@app.route('/application/new')
+# Creates new application
+@app.route('/application/new', methods=['GET','POST'])
 def newApplication():
     return "This page will create a new application for the user"
 
-# Edits application created by the user
-@app.route('/application/<int:application_id>/edit')
-def editApplication():
+# Edit exhisting application
+@app.route('/application/<int:application_id>/edit', methods=['GET','POST'])
+def editApplication(application_id):
     return "This page will edit an application created by the user"
 
-# Deletes application created by the user
-@app.route('/application/<int:application_id>/delete')
-def deleteApplication():
+# Deletes exhisting application
+@app.route('/application/<int:application_id>/delete', methods=['GET','POST'])
+def deleteApplication(application_id):
     return "This page will delete an application created by the user"
+
+@app.route('/application/<int:application_id>/', methods=['GET','POST'])
+def showFeatures(application_id):
+
+
+@app.route('/application/<int:application_id>/feature/new', methods=['GET','POST'])
+def createFeature(application_id):
+
+
+@app.route('/application/<int:application_id>/feature/<int:feature_id>/edit', methods=['GET','POST'])
+def editFeature(application_id, feature_id):
+
+
+@app.route('/application/<int:application_id>/feature/<int:feature_id>/delete', methods=['GET','POST'])
+def deleteFeature(application_id, feature_id):
+
 
 if __name__ == '__main__':
     app.debug = True
