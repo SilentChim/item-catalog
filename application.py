@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Restaurant, MenuItem
+from db_setup import Base, Application, Feature
 
 app = Flask(__name__)
 
@@ -16,37 +16,106 @@ session = DBSession()
 @app.route('/')
 @app.route('/application')
 def showApplications():
-    return "This page will display all created applications"
+    applications = session.query(Application).all()
+    return render_template('applications.html', applications =
+        applications)
 
 # Creates new application
 @app.route('/application/new', methods=['GET','POST'])
 def newApplication():
-    return "This page will create a new application for the user"
+    if request.method == 'POST':
+        newApplication = Application(name=request.form['name'])
+        session.add(newApplication)
+        session.commit()
+        return redirect(url_for('showApplications'))
+    else:
+        return render_template('newApplication.html')
 
 # Edit exhisting application
 @app.route('/application/<int:application_id>/edit', methods=['GET','POST'])
 def editApplication(application_id):
-    return "This page will edit an application created by the user"
+    editedApplication = session.query(
+        Application).filter_by(id=application_id).one()
+    if request.method == 'POST':
+        if request.form['name']:
+            editedApplication.name = request.form['name']
+            return redirect(url_for('showApplications'))
+    else:
+        return render_template(
+            'editApplication.html', application=editedApplication)
 
 # Deletes exhisting application
 @app.route('/application/<int:application_id>/delete', methods=['GET','POST'])
 def deleteApplication(application_id):
-    return "This page will delete an application created by the user"
+    applicationToDelete = session.query(Application).filter_by(id=application_id).one()
+    if request.ethod =='POST':
+        session.deleate(applicationToDelete)
+        session.commit()
+        return redirect(url_for('showApplications', application_id=application_id)
+    else:
+        return render_template('deleteApplication.html', application=applicationToDelete)
 
+# Shows all features
 @app.route('/application/<int:application_id>/', methods=['GET','POST'])
 def showFeatures(application_id):
+    application = session.query(Application).filter_by(id=application_id).one()
+    features = = session.query(Feature).filter_by(application_id=application.id).all()
+    return render_template('feature.html', application=application, features=features)
 
 
 @app.route('/application/<int:application_id>/feature/new', methods=['GET','POST'])
 def createFeature(application_id):
+    if request.method == 'POST':
+        newFeature = Feature(title = request.form['title'],description=request.form[
+                           'description'], client=request.form['client'],
+                           client_priority=request.form['client_priority'],
+                           target_date=request.form['target_date'],
+                           product_area=request.form['product_area'],
+                           application_id=application_id)
+        session.add(newFeature)
+        session.commit()
+        flash("New feature created")
+        return redirect(url_for('showFeature', application_id =
+            application_id))
+    else:
+        return render_template('newFeature.html', application_id =
+            application_id)
 
 
 @app.route('/application/<int:application_id>/feature/<int:feature_id>/edit', methods=['GET','POST'])
 def editFeature(application_id, feature_id):
+    editedFeature = session.query(Feature).filter_by(id=feature_id).one()
+    if request.method == 'POST':
+        if request.form['title']:
+            editedFeature.title = request.form['title']
+        if request.form['description']:
+            editedFeature.description = request.form['description']
+        if request.form['client']:
+            editedFeature.client = request.form['client']
+        if request.form['client_priority']:
+            editedFeature.client_priority = request.form['client_priority']
+        if request.form['target_date']:
+            editedFeature.target_date = request.form['target_date']
+        if request.form['product_area']:
+            editedFeature.product_area = request.form['product_area']
+        session.add(editedFeature)
+        session.commit()
+        return redirect(url_for('showFeature', application_id=application_id))
+    else:
+
+        return render_template(
+            'editFeature.html', application_id=restaurant_id, feature_id=feature_id, feature=editedFeature)
 
 
 @app.route('/application/<int:application_id>/feature/<int:feature_id>/delete', methods=['GET','POST'])
 def deleteFeature(application_id, feature_id):
+    featureToDelete = session.query(Feature).filter_by(id=feature_id).one()
+    if request.method == 'POST':
+        session.delete(featureToDelete)
+        session.commit()
+        return redirect(url_for('showFeature', application_id=application_id))
+    else:
+        return render_template('deleteFeature.html', feature=featureToDelete)
 
 
 if __name__ == '__main__':
