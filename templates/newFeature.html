@@ -1,0 +1,52 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+	<div class="row divider green">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row banner menu">
+		<div class="col-md-11 col-md-offset-1 padding-none">
+			<h1>New Feature</h1>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6 col-md-offset-1 padding-top">
+			<form action="#" method = "post">
+				<div class="form-group">
+					<label for="title">Title:</label>
+					<input type ="text" maxlength="50" class="form-control" name="title"placeholder="Title of feature">
+
+					<label for="description">Description:</label>
+					<textarea class="form-control" maxlength="250" rows="3" name="description" placeholder="Description of feature"></textarea>
+
+					<label for="client">Client:</label>
+					<input type ="text" maxlength="100" class="form-control" name="client"placeholder="Name of client">
+
+					<label for="product_area">Product Area:</label>
+					<div class="radio">
+					  <label>
+					    <input type="radio" name="product_area" id="product_area1" value="Policies">Policies
+					  </label>
+					</div>
+					<div class="radio">
+					  <label>
+					    <input type="radio" name="product_area" id="product_area2" value="Billing">Billing
+					  </label>
+					</div>
+					<div class="radio">
+					  <label>
+					    <input type="radio" name="product_area" id="product_area3" value="Claims">Claims
+					  </label>
+					</div>
+					<div class="radio">
+					  <label>
+					    <input type="radio" name="product_area" id="product_area4" value="Reports">Reports
+					  </label>
+					</div>
+					<button type="submit" class="btn btn-default" id="submit" type="submit">
+					<span class="glyphicon glyphicon-glass" aria-hidden="true"></span>Create</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}
