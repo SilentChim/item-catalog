@@ -3,6 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db_setup import Base, Application, Feature
 
+# Imports to create anti forgery state tokens
+from flask import session as login_session
+import random
+import string
+
 app = Flask(__name__)
 
 engine = create_engine('sqlite:///application.db')
@@ -10,6 +15,15 @@ Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
+# Create a state token to prevent request forgery
+# Store in session for validation later
+@app.route('/login')
+def showLogin():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    login_session['state'] = state
+    # return "The current session state is %s" % login_session['state']
+    return render_template('login.html')
 
 # JSON APIs to view Application Info
 @app.route('/application/<int:application_id>/feature/JSON')
@@ -67,19 +81,20 @@ def editApplication(application_id):
 # Deletes exhisting application
 @app.route('/application/<int:application_id>/delete', methods=['GET','POST'])
 def deleteApplication(application_id):
-    applicationToDelete = session.query(Application).filter_by(id=application_id).one()
-    if request.ethod =='POST':
-        session.deleate(applicationToDelete)
-        session.commit()
-        return redirect(url_for('showApplications', application_id=application_id)
-    else:
-        return render_template('deleteApplication.html', application=applicationToDelete)
+  applicationToDelete = session.query(Application).filter_by(id = application_id).one()
+  if request.method == 'POST':
+    session.delete(applicationToDelete)
+    flash('%s Successfully Deleted' % applicationToDelete.name)
+    session.commit()
+    return redirect(url_for('showApplications', application_id = application_id))
+  else:
+    return render_template('deleteApplication.html',application = applicationToDelete)
 
 # Shows all features
 @app.route('/application/<int:application_id>/', methods=['GET','POST'])
 def showFeatures(application_id):
     application = session.query(Application).filter_by(id=application_id).one()
-    features = = session.query(Feature).filter_by(application_id=application.id).all()
+    features = session.query(Feature).filter_by(application_id=application.id).all()
     return render_template('feature.html', application=application, features=features)
 
 
@@ -139,5 +154,6 @@ def deleteFeature(application_id, feature_id):
 
 
 if __name__ == '__main__':
+    app.secret_key = 'super_secret_key'
     app.debug = True
     app.run(host = '0.0.0.0', port = 5000)
