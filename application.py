@@ -111,6 +111,39 @@ def gconnect():
     print "done!"
     return output
 
+# DISCONNECT - Revoke a current user's token and reset their login_session
+@app.route('/gdisconnect')
+def gdisconnect():
+    # Only disconnect connected user
+    credentials = login_session.get('credentials')
+    if credentials is None:
+        response = make_response(json.dumps('Cuurent user not connected'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    # Execute HTTP GET request to revoke current token
+    access_token = credentials.access_token
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+
+    if result['status'] == '200':
+        # Reset the user's sesson.
+        del login_session['credentials']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+
+        response = make_response(json.dumps('Successfully disconnected.'), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    else:
+        # For whatever reason, the given token was invalid.
+        response = make_response(
+            json.dumps('Failed to revoke token for given user.', 400))
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
 # JSON APIs to view Application Info
 @app.route('/application/<int:application_id>/feature/JSON')
 def applicationFeatureJSON(application_id):
@@ -167,14 +200,14 @@ def editApplication(application_id):
 # Deletes exhisting application
 @app.route('/application/<int:application_id>/delete', methods=['GET','POST'])
 def deleteApplication(application_id):
-  applicationToDelete = session.query(Application).filter_by(id = application_id).one()
-  if request.method == 'POST':
-    session.delete(applicationToDelete)
-    flash('%s Successfully Deleted' % applicationToDelete.name)
-    session.commit()
-    return redirect(url_for('showApplications', application_id = application_id))
-  else:
-    return render_template('deleteApplication.html',application = applicationToDelete)
+    applicationToDelete = session.query(Application).filter_by(id = application_id).one()
+    if request.method == 'POST':
+        session.delete(applicationToDelete)
+        flash('%s Successfully Deleted' % applicationToDelete.name)
+        session.commit()
+        return redirect(url_for('showApplications', application_id = application_id))
+    else:
+        return render_template('deleteApplication.html',application = applicationToDelete)
 
 # Shows all features
 @app.route('/application/<int:application_id>/', methods=['GET','POST'])
