@@ -205,16 +205,16 @@ def deleteApplication(application_id):
         session.delete(applicationToDelete)
         flash('%s Successfully Deleted' % applicationToDelete.name)
         session.commit()
-        return redirect(url_for('showApplications', application_id = application_id))
+        return redirect(url_for('showApplications', application_id=application_id))
     else:
-        return render_template('deleteApplication.html',application = applicationToDelete)
+        return render_template('deleteApplication.html',application=applicationToDelete)
 
 # Shows all features
 @app.route('/application/<int:application_id>/', methods=['GET','POST'])
 def showFeatures(application_id):
     application = session.query(Application).filter_by(id=application_id).one()
     features = session.query(Feature).filter_by(application_id=application.id).all()
-    return render_template('feature.html', application=application, features=features)
+    return render_template('applicationFeatures.html', application=application, features=features)
 
 
 @app.route('/application/<int:application_id>/feature/new', methods=['GET','POST'])
@@ -222,14 +222,14 @@ def createFeature(application_id):
     if request.method == 'POST':
         newFeature = Feature(title = request.form['title'],description=request.form[
                            'description'], client=request.form['client'],
-                           client_priority=request.form['client_priority'],
-                           target_date=request.form['target_date'],
+                           # client_priority=request.form['client_priority'],
+                           # target_date=request.form['target_date'],
                            product_area=request.form['product_area'],
                            application_id=application_id)
         session.add(newFeature)
         session.commit()
         flash("New feature created")
-        return redirect(url_for('showFeature', application_id =
+        return redirect(url_for('showFeatures', application_id =
             application_id))
     else:
         return render_template('newFeature.html', application_id =
@@ -254,7 +254,7 @@ def editFeature(application_id, feature_id):
             editedFeature.product_area = request.form['product_area']
         session.add(editedFeature)
         session.commit()
-        return redirect(url_for('showFeature', application_id=application_id))
+        return redirect(url_for('showFeatures', application_id=application_id))
     else:
 
         return render_template(
@@ -267,9 +267,9 @@ def deleteFeature(application_id, feature_id):
     if request.method == 'POST':
         session.delete(featureToDelete)
         session.commit()
-        return redirect(url_for('showFeature', application_id=application_id))
+        return redirect(url_for('showFeatures', application_id=application_id))
     else:
-        return render_template('deleteFeature.html', feature=featureToDelete)
+        return render_template('deleteFeature.html', application_id=application_id, feature=featureToDelete)
 
 
 if __name__ == '__main__':
