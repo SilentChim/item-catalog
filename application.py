@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect
+from flask import url_for, flash, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db_setup import Base, Application, Feature
+from db_setup import Base, Application, Feature, User
 
 # Imports to create anti forgery state tokens
 from flask import session as login_session
@@ -28,14 +29,17 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+
 # Create a state token to prevent request forgery
 # Store in session for validation later
 @app.route('/login')
 def showLogin():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    state = ''.join(random.choice(
+        string.ascii_uppercase + string.digits) for x in xrange(32))
     login_session['state'] = state
     # return "The current session state is %s" % login_session['state']
-    return render_template('login.html', STATE = state)
+    return render_template('login.html', STATE=state)
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -51,25 +55,36 @@ def gconnect():
         # Initiates exchange of authorization code for credentials object
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
-        response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
+        response = make_response(json.dumps(
+            'Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
     # Check for valid access token
     access_token = credentials.access_token
-    url = ('https:googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token)
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+           % access_token)
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If access token error, abort
     if result.get('error') is not None:
-        response = make_response(json.dumps(result.get('error')), 50)
+        response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
+        return response
 
     # Verify access token used as intended
     gplus_id = credentials.id_token['sub']
     if result['user_id'] != gplus_id:
-        response = make_response(json.dumps("Token's user ID doesn't match given user ID."), 401)
+        response = make_response(json.dumps(
+            "Token's user ID doesn't match given user ID."), 401)
         print "Token's client ID does not match app's."
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Verifies token is valid for this app
+    if result['issued_to'] != CLIENT_ID:
+        response = make_response(
+            json.dumps("Token's client ID does not match app's."), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -77,25 +92,26 @@ def gconnect():
     stored_credentials = login_session.get('credentials')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_credentials is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'), 200)
+        response = make_response(json.dumps(
+            'Current user is already connected.'), 200)
         response.headers['Content-Type'] = 'application/json'
 
     # Store the acces token in the session for later use
-    login_session['credentials'] = credentials
+    login_session['access_token'] = credentials.access_token
     login_session['gplus_id'] = gplus_id
 
-    #Get user info
+    # Get user info
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt':'json'}
+    params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
-    data = json.loads(answer.text)
+    data = answer.json()
 
-    login_session['username'] = data["name"]
-    login_session['picture'] = data["picture"]
-    login_session['email'] = data["email"]
+    login_session['username'] = data['name']
+    login_session['picture'] = data['picture']
+    login_session['email'] = data['email']
 
     # See if a user exists, if it doesn't make a new one
-    user_id = getUserID(login_session['email'])
+    user_id = getUserID(data['email'])
     if not user_id:
         user_id = createUser(login_session)
     login_session['user_id'] = user_id
@@ -106,29 +122,57 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ''' " style = "width: 300px; height: 300px;border-
+              radius: 150px;
+              -webkit-border-radius: 150px;
+              -moz-border-radius: 150px;"> '''
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
+
+
+# User Helper Functions
+def createUser(login_session):
+    newUser = User(name=login_session['username'],
+                   email=login_session['email'],
+                   picture=login_session['picture'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+
+def getUserID(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
 
 # DISCONNECT - Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
     # Only disconnect connected user
-    credentials = login_session.get('credentials')
-    if credentials is None:
+    access_token = login_session['access_token']
+    if access_token is None:
         response = make_response(json.dumps('Cuurent user not connected'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     # Execute HTTP GET request to revoke current token
-    access_token = credentials.access_token
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+    url = ('https://accounts.google.com/o/oauth2/revoke?token=%s'
+           % login_session['access_token'])
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
 
     if result['status'] == '200':
         # Reset the user's sesson.
-        del login_session['credentials']
+        del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
@@ -136,13 +180,14 @@ def gdisconnect():
 
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return redirect(url_for('showApplications'))
     else:
         # For whatever reason, the given token was invalid.
         response = make_response(
-            json.dumps('Failed to revoke token for given user.', 400))
+            json.dumps('Failed to revoke token for given user.'), 400)
         response.headers['Content-Type'] = 'application/json'
         return response
+
 
 # JSON APIs to view Application Info
 @app.route('/application/<int:application_id>/feature/JSON')
@@ -164,18 +209,21 @@ def applicationsJSON():
     applications = session.query(Application).all()
     return jsonify(applications=[a.serialize for a in applications])
 
+
 # Main Handlers
 # Shows all applications
 @app.route('/')
 @app.route('/application')
 def showApplications():
     applications = session.query(Application).all()
-    return render_template('applications.html', applications =
-        applications)
+    return render_template('applications.html', applications=applications)
+
 
 # Creates new application
-@app.route('/application/new', methods=['GET','POST'])
+@app.route('/application/new', methods=['GET', 'POST'])
 def newApplication():
+    if 'username' not in login_session:
+        return redirect('/login')
     if request.method == 'POST':
         newApplication = Application(name=request.form['name'])
         session.add(newApplication)
@@ -184,9 +232,12 @@ def newApplication():
     else:
         return render_template('newApplication.html')
 
+
 # Edit exhisting application
-@app.route('/application/<int:application_id>/edit', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/edit', methods=['GET', 'POST'])
 def editApplication(application_id):
+    if 'username' not in login_session:
+        return redirect('/login')
     editedApplication = session.query(
         Application).filter_by(id=application_id).one()
     if request.method == 'POST':
@@ -197,47 +248,62 @@ def editApplication(application_id):
         return render_template(
             'editApplication.html', application=editedApplication)
 
+
 # Deletes exhisting application
-@app.route('/application/<int:application_id>/delete', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/delete', methods=['GET', 'POST'])
 def deleteApplication(application_id):
-    applicationToDelete = session.query(Application).filter_by(id = application_id).one()
+    if 'username' not in login_session:
+        return redirect('/login')
+    applicationToDelete = session.query(
+        Application).filter_by(id=application_id).one()
     if request.method == 'POST':
         session.delete(applicationToDelete)
         flash('%s Successfully Deleted' % applicationToDelete.name)
         session.commit()
-        return redirect(url_for('showApplications', application_id=application_id))
+        return redirect(url_for('showApplications',
+                                application_id=application_id))
     else:
-        return render_template('deleteApplication.html',application=applicationToDelete)
+        return render_template('deleteApplication.html',
+                               application=applicationToDelete)
+
 
 # Shows all features
-@app.route('/application/<int:application_id>/', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/', methods=['GET', 'POST'])
 def showFeatures(application_id):
     application = session.query(Application).filter_by(id=application_id).one()
-    features = session.query(Feature).filter_by(application_id=application.id).all()
-    return render_template('applicationFeatures.html', application=application, features=features)
+    features = session.query(
+        Feature).filter_by(application_id=application.id).all()
+    return render_template('applicationFeatures.html',
+                           application=application, features=features)
 
 
-@app.route('/application/<int:application_id>/feature/new', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/feature/new',
+           methods=['GET', 'POST'])
 def createFeature(application_id):
+    if 'username' not in login_session:
+        return redirect('/login')
     if request.method == 'POST':
-        newFeature = Feature(title = request.form['title'],description=request.form[
-                           'description'], client=request.form['client'],
-                           # client_priority=request.form['client_priority'],
-                           # target_date=request.form['target_date'],
-                           product_area=request.form['product_area'],
-                           application_id=application_id)
+        newFeature = Feature(title=request.form['title'],
+                             description=request.form[
+                             'description'], client=request.form['client'],
+                             # client_priority=request.form['client_priority'],
+                             # target_date=request.form['target_date'],
+                             product_area=request.form['product_area'],
+                             application_id=application_id)
         session.add(newFeature)
         session.commit()
         flash("New feature created")
-        return redirect(url_for('showFeatures', application_id =
-            application_id))
+        return redirect(url_for('showFeatures', application_id=application_id))
     else:
-        return render_template('newFeature.html', application_id =
-            application_id)
+        return render_template('newFeature.html',
+                               application_id=application_id)
 
 
-@app.route('/application/<int:application_id>/feature/<int:feature_id>/edit', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/feature/<int:feature_id>/edit',
+           methods=['GET', 'POST'])
 def editFeature(application_id, feature_id):
+    if 'username' not in login_session:
+        return redirect('/login')
     editedFeature = session.query(Feature).filter_by(id=feature_id).one()
     if request.method == 'POST':
         if request.form['title']:
@@ -258,21 +324,27 @@ def editFeature(application_id, feature_id):
     else:
 
         return render_template(
-            'editFeature.html', application_id=application_id, feature_id=feature_id, feature=editedFeature)
+            'editFeature.html', application_id=application_id,
+            feature_id=feature_id, feature=editedFeature)
 
 
-@app.route('/application/<int:application_id>/feature/<int:feature_id>/delete', methods=['GET','POST'])
+@app.route('/application/<int:application_id>/feature/<int:feature_id>/delete',
+           methods=['GET', 'POST'])
 def deleteFeature(application_id, feature_id):
+    if 'username' not in login_session:
+        return redirect('/login')
     featureToDelete = session.query(Feature).filter_by(id=feature_id).one()
     if request.method == 'POST':
         session.delete(featureToDelete)
         session.commit()
         return redirect(url_for('showFeatures', application_id=application_id))
     else:
-        return render_template('deleteFeature.html', application_id=application_id, feature=featureToDelete)
+        return render_template('deleteFeature.html',
+                               application_id=application_id,
+                               feature=featureToDelete)
 
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host = '0.0.0.0', port = 5000)
+    app.run(host='0.0.0.0', port=5000)
