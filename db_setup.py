@@ -14,10 +14,11 @@ class User(Base):
     # Defines the name of the table
     __tablename__ = 'user'
     # Mapper variables for user attributes
-    name = Column(String(80), nullable = False)
-    email = Column(String(80), nullable = False)
-    picture = Column(String(80), nullable = False)
-    id = Column(Integer, primary_key = True)
+    name = Column(String(80), nullable=False)
+    email = Column(String(80), nullable=False)
+    picture = Column(String(80), nullable=False)
+    id = Column(Integer, primary_key=True)
+
 
 class Application(Base):
     """Class defines the table for the applications in the database"""
@@ -26,10 +27,10 @@ class Application(Base):
     # Defines relationships with other tables
     user = relationship(User)
     # Mapper variables for feature attributes
-    id = Column(Integer, primary_key = True)
+    id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
-    name = Column(String(250), nullable = False)
+    name = Column(String(250), nullable=False)
 
     @property
     def serialize(self):
@@ -38,6 +39,7 @@ class Application(Base):
             'name': self.name,
             'id': self.id
         }
+
 
 class Feature(Base):
     """Class defines the table for the features in the database"""
@@ -49,28 +51,28 @@ class Feature(Base):
     # Mapper variables for feature item attributes
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
-    application_id = Column(Integer,ForeignKey('application.id'))
-    title = Column(String(80), nullable = False)
+    application_id = Column(Integer, ForeignKey('application.id'))
+    title = Column(String(80), nullable=False)
     description = Column(String(250))
-    client = Column(String(80), nullable = False)
+    client = Column(String(80), nullable=False)
     # client_priority = Column(Integer)
     # Examine for possible input changes at later date
     # target_date = Column(String(6), nullable = False)
     # Examine for possible input changes at later date
-    product_area = Column(String(80), nullable = False)
+    product_area = Column(String(80), nullable=False)
 
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-            'title': self.title,
-            'description': self.description,
-            'id': self.id,
-            'client': self.client,
-            'client_priority': self.client_priority,
-            'target_date': self.target_date,
-            'product_area': self.product_area
-        }
+        """Return object data in easily serializeable format"""
+        return {
+             'title': self.title,
+             'description': self.description,
+             'id': self.id,
+             'client': self.client,
+             'client_priority': self.client_priority,
+             'target_date': self.target_date,
+             'product_area': self.product_area
+         }
 
 
 # End configuration code
