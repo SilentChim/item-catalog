@@ -1,0 +1,52 @@
+.wrapper {
+
+}
+
+h1 {
+
+}
+
+h2 {
+
+}
+
+h3 {
+
+}
+
+form {
+
+}
+
+label {
+
+}
+
+input {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.btn {
+  background-color: #1BB3F5;
+  padding: 14px 24px;
+  border: 0 none;
+  color: white;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.btn:hover {
+  transition: 1s;
+}
+
+button {
+
+}

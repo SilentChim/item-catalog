@@ -1,11 +1,14 @@
 <div class="row top-menu">
 	<div class="col-md-6">
 		<a href="{{url_for('showApplications')}}">
-			<span class="glyphicon glyphicon-home" aria-hidden="true"></span>Show All Applications
+			<span class="glyphicon glyphicon-home" aria-hidden="true"></span> Applications
 		</a>
 	</div>
 	<div class="col-md-6 text-right">
-					<p>Login Link will go Here </p>
-
+	    {% if 'username' not in session %}
+	    <a class="nav-login" href="{{url_for('showLogin')}}"><font size=5px color=#4885ed>L</font><font size=5px color=#db3236>o</font><font size=5px color=#f4c20d>g</font> <font size=5px color=#4885ed>i</font><font size=5px color=#3cba54>n</font><font size=5px color=#db3236>!</font></a>
+	    {% else %}
+	    <a class="nav-logout" href="{{url_for('gdisconnect')}}"><font size=5px color=#4885ed>L</font><font size=5px color=#db3236>o</font><font size=5px color=#f4c20d>g</font> <font size=5px color=#4885ed>o</font><font size=5px color=#3cba54>u</font><font size=5px color=#db3236>t</font></a>
+	    {% endif %}
 	</div>
 </div>

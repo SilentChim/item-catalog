@@ -161,7 +161,7 @@ def gdisconnect():
     # Only disconnect connected user
     access_token = login_session['access_token']
     if access_token is None:
-        response = make_response(json.dumps('Cuurent user not connected'), 401)
+        response = make_response(json.dumps('Current user not connected'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     # Execute HTTP GET request to revoke current token
