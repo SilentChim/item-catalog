@@ -22,15 +22,21 @@ label {
 
 }
 
-input {
+.form-control {
   width: 100%;
   padding: 12px 20px;
   margin: 8px 0;
   display: inline-block;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 15px;
   box-sizing: border-box;
 }
+
+/**
+input {
+
+}
+*/
 
 .btn {
   background-color: #1BB3F5;

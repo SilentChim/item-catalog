@@ -69,8 +69,8 @@ class Feature(Base):
              'description': self.description,
              'id': self.id,
              'client': self.client,
-             'client_priority': self.client_priority,
-             'target_date': self.target_date,
+             # 'client_priority': self.client_priority,
+             # 'target_date': self.target_date,
              'product_area': self.product_area
          }
 

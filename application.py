@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect
 from flask import url_for, flash, jsonify
+from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db_setup import Base, Application, Feature, User
@@ -29,6 +30,16 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        print "blah"
+        if 'username' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access there")
+            return redirect('/login')
+    return decorated_function
 
 # Create a state token to prevent request forgery
 # Store in session for validation later
@@ -221,9 +232,8 @@ def showApplications():
 
 # Creates new application
 @app.route('/application/new', methods=['GET', 'POST'])
+@login_required
 def newApplication():
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         newApplication = Application(name=request.form['name'])
         session.add(newApplication)
@@ -235,11 +245,12 @@ def newApplication():
 
 # Edit exhisting application
 @app.route('/application/<int:application_id>/edit', methods=['GET', 'POST'])
+@login_required
 def editApplication(application_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     editedApplication = session.query(
-        Application).filter_by(id=application_id).one()
+        Application).filter_by(id=application_id).one_or_none()
+    if not editApplication:
+        return redirect("/")
     if request.method == 'POST':
         if request.form['name']:
             editedApplication.name = request.form['name']
@@ -251,9 +262,8 @@ def editApplication(application_id):
 
 # Deletes exhisting application
 @app.route('/application/<int:application_id>/delete', methods=['GET', 'POST'])
+@login_required
 def deleteApplication(application_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     applicationToDelete = session.query(
         Application).filter_by(id=application_id).one()
     if request.method == 'POST':
@@ -279,9 +289,8 @@ def showFeatures(application_id):
 
 @app.route('/application/<int:application_id>/feature/new',
            methods=['GET', 'POST'])
+@login_required
 def createFeature(application_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         newFeature = Feature(title=request.form['title'],
                              description=request.form[
@@ -301,9 +310,8 @@ def createFeature(application_id):
 
 @app.route('/application/<int:application_id>/feature/<int:feature_id>/edit',
            methods=['GET', 'POST'])
+@login_required
 def editFeature(application_id, feature_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     editedFeature = session.query(Feature).filter_by(id=feature_id).one()
     if request.method == 'POST':
         if request.form['title']:
@@ -330,9 +338,8 @@ def editFeature(application_id, feature_id):
 
 @app.route('/application/<int:application_id>/feature/<int:feature_id>/delete',
            methods=['GET', 'POST'])
+@login_required
 def deleteFeature(application_id, feature_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     featureToDelete = session.query(Feature).filter_by(id=feature_id).one()
     if request.method == 'POST':
         session.delete(featureToDelete)
