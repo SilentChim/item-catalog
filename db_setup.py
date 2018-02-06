@@ -76,5 +76,5 @@ class Feature(Base):
 
 
 # End configuration code
-engine = create_engine('sqlite:///application.db')
+engine = create_engine('postgresql://catalog:udacity@localhost/catalog')
 Base.metadata.create_all(engine)
