@@ -20,7 +20,7 @@ import requests
 
 # Declares client ID
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+    open('/srv/item-catalog/client_secrets.json', 'r').read())['web']['client_id']
 
 app = Flask(__name__)
 
