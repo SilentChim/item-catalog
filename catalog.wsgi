@@ -22,7 +22,8 @@ import requests
 CLIENT_ID = json.loads(
     open('/srv/item-catalog/client_secrets.json', 'r').read())['web']['client_id']
 
-app = Flask(__name__)
+application = Flask(__name__)
+app = application
 
 engine = create_engine('postgresql://catalog:udacity@localhost/catalog')
 Base.metadata.bind = engine
